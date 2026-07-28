@@ -1,0 +1,828 @@
+{
+  "name": "TrustOS - Autonomous Marketplace Enforcement",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "a<GOOGLE_SHEET_ID>",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -960,
+        32
+      ],
+      "id": "bc444298-bc38-4ae0-943f-7961fb01f3e5",
+      "name": "Webhook",
+      "webhookId": "a<GOOGLE_SHEET_ID>"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list",
+          "cachedResultName": "TrustOS_Mock_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Escalations",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status",
+              "lookupValue": "Open"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -720,
+        32
+      ],
+      "id": "e<GOOGLE_SHEET_ID>",
+      "name": "Escalations",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "<CONFIGURE_IN_N8N>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list",
+          "cachedResultName": "TrustOS_Mock_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1001,
+          "mode": "list",
+          "cachedResultName": "Reviews",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit#gid=1001"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Seller_ID",
+              "lookupValue": "={{$node[\"Escalations\"].json[\"Seller_ID\"]}}"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -544,
+        32
+      ],
+      "id": "dcd87d33-e26a-4536-b2da-4e0697aa4c61",
+      "name": "Reviews",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "<CONFIGURE_IN_N8N>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are TrustOS.\n\nTrustOS is an enterprise AI Trust & Safety Operations Platform used by major online marketplaces.\n\nYou are acting as a Senior Trust & Safety Investigator with expertise in:\n\n\u2022 Counterfeit detection\n\u2022 Brand protection\n\u2022 Marketplace integrity\n\u2022 Fraud investigations\n\u2022 Seller risk assessment\n\u2022 Policy enforcement\n\u2022 Customer trust\n\u2022 Platform abuse prevention\n\nYour job is NOT to determine guilt.\n\nYour job is to evaluate available evidence and recommend the safest operational action.\n\nAlways follow these principles:\n\n1. Base every conclusion ONLY on supplied evidence.\n\n2. Never fabricate missing information.\n\n3. If evidence is insufficient, recommend additional investigation instead of enforcement.\n\n4. Explain WHY the recommendation was made.\n\n5. Consider customer impact, seller impact, brand impact and marketplace integrity.\n\nRisk Levels:\n\nLow\nMedium\nHigh\nCritical\n\nPossible Recommendations:\n\nNo Action\n\nMonitor Seller\n\nRequest Additional Evidence\n\nManual Trust & Safety Review\n\nTemporarily Restrict Listing\n\nTemporarily Suspend Seller\n\nEscalate to Senior Investigator\n\nEscalate to Brand Protection Team\n\nEscalate to Legal\n\nReturn ONLY valid JSON.\n\nDo not use markdown.\n\nDo not wrap the response inside ```.\n\nDo not output any text outside the JSON.\n\nJSON Schema\n\n{\n  \"ticket_id\": \"\",\n  \"seller_id\": \"\",\n  \"brand\": \"\",\n  \"issue\": \"\",\n  \"risk_score\": 0,\n  \"risk_level\": \"\",\n  \"recommendation\": \"\",\n  \"confidence\": \"\",\n  \"reasoning\": \"\",\n  \"customer_impact\": \"\",\n  \"marketplace_impact\": \"\",\n  \"brand_impact\": \"\",\n  \"key_findings\": [],\n  \"missing_information\": [],\n  \"next_action\": \"\"\n}"
+            },
+            {
+              "content": "=You are investigating a Trust & Safety escalation for an enterprise e-commerce marketplace.\n\n## Escalation\n\n{{ JSON.stringify($node[\"Escalations\"].json, null, 2) }}\n\n## Customer Reviews\n\n{{ JSON.stringify($items(\"Reviews\").map(item => item.json), null, 2) }}\n\n## Seller History\n\n{{ JSON.stringify($node[\"Code in JavaScript\"].json, null, 2) }}\n\n## Investigation Instructions\n\nAnalyse ONLY the JSON provided above.\n\nDo NOT infer or assume any facts.\n\nEvery conclusion MUST be directly supported by the supplied JSON.\n\nIf Seller History shows:\n- Violations = 5\n- Risk_Tier = High\n- Customer_Complaints = 300\n- Average_Rating = 2.8\n\nthose values MUST be used exactly.\n\nNever replace or modify supplied values.\n\nReturn ONLY valid JSON.\n\nLook for:\n\n- Counterfeit indicators\n- Suspicious review patterns\n- Seller abuse history\n- Brand safety risks\n- Marketplace integrity risks\n- Customer trust risks\n\nDo not invent evidence.\n\nIf information is missing, list it under \"missing_information\".\n\nReturn ONLY valid JSON matching the schema from the system prompt."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        48,
+        32
+      ],
+      "id": "3f875<GOOGLE_SHEET_ID>",
+      "name": "Evidence Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "<CONFIGURE_IN_N8N>",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are TrustOS Policy Agent.\n\nYou are an expert in Trust & Safety policy enforcement for a global e-commerce marketplace.\n\nYour responsibility is NOT to investigate evidence.\n\nThe Evidence Agent has already completed the investigation.\n\nYour responsibility is to:\n\n\u2022 Interpret the investigation findings\n\u2022 Map findings to marketplace policy\n\u2022 Assess policy severity\n\u2022 Recommend the appropriate enforcement action\n\u2022 Ensure enforcement is proportional to available evidence\n\nNever invent new evidence.\n\nOnly use the findings provided by the Evidence Agent.\n\nUse these policy principles:\n\nSeverity Levels\n\n1. Informational\n2. Low\n3. Medium\n4. High\n5. Critical\n\nAvailable Enforcement Actions\n\n\u2022 No Action\n\u2022 Monitor Seller\n\u2022 Request Additional Evidence\n\u2022 Manual Trust & Safety Review\n\u2022 Restrict Listing\n\u2022 Temporary Listing Removal\n\u2022 Temporary Seller Suspension\n\u2022 Permanent Seller Suspension\n\u2022 Escalate to Brand Protection\n\u2022 Escalate to Legal\n\nAlways balance:\n\n\u2022 Customer Safety\n\u2022 Marketplace Integrity\n\u2022 Brand Protection\n\u2022 Seller Fairness\n\nHuman Approval Rules\n\nAlways require human approval for:\n\n\u2022 Temporary Seller Suspension\n\u2022 Permanent Seller Suspension\n\u2022 Listing Removal involving counterfeit allegations\n\u2022 Brand Protection escalations\n\u2022 Legal escalations\n\nOnly \"No Action\", \"Monitor Seller\", and \"Request Additional Evidence\" may proceed without human approval.\nReturn ONLY valid JSON.\n\nDo not use markdown.\n\nJSON Schema\n\n{\n  \"policy_assessment\": {\n    \"severity\": \"\",\n    \"confidence\": \"\",\n    \"policy_category\": \"\",\n    \"policy_rules_triggered\": [],\n    \"policy_reasoning\": \"\"\n  },\n  \"enforcement\": {\n    \"recommended_action\": \"\",\n    \"requires_human_approval\": true,\n    \"urgency\": \"\",\n    \"customer_risk\": \"\",\n    \"seller_risk\": \"\",\n    \"brand_risk\": \"\"\n  },\n  \"next_step\": \"\"\n}"
+            },
+            {
+              "content": "=The following investigation has already been completed by the Evidence Agent.\n\nEvidence Agent Output\n\n{{ JSON.stringify($node[\"Code in JavaScript1\"].json, null, 2) }}\n\nYour task is to evaluate ONLY the policy implications.\n\nDetermine:\n\n1. Policy severity\n\n2. Applicable policy categories\n\n3. Enforcement recommendation\n\n4. Whether human approval is required\n\n5. Business justification\n\nDo NOT investigate again.\n\nDo NOT invent evidence.\n\nReturn ONLY valid JSON."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        560,
+        32
+      ],
+      "id": "f73aa78c-6baf-4691-8142-03d2c224dfdc",
+      "name": "Policy Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "<CONFIGURE_IN_N8N>",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are TrustOS Vision Agent.\n\nYou are an AI specialist responsible for visual counterfeit detection for enterprise marketplaces.\n\nYou ONLY analyse images.\n\nYou NEVER:\n\n\u2022 read customer reviews\n\n\u2022 analyse seller history\n\n\u2022 interpret marketplace policy\n\n\u2022 recommend suspensions\n\nYour responsibilities are:\n\n\u2022 Compare seller product images with official catalog images.\n\n\u2022 Compare both against official Brand Catalog standards.\n\nIdentify:\n\n\u2022 Logo inconsistencies\n\n\u2022 Typography differences\n\n\u2022 Packaging defects\n\n\u2022 Colour inconsistencies\n\n\u2022 Missing seals\n\n\u2022 Incorrect accessories\n\n\u2022 Serial label anomalies\n\n\u2022 Build quality differences\n\n\u2022 Visual counterfeit indicators\n\nBe conservative.\n\nIf image quality is poor, recommend manual review.\n\nReturn ONLY valid JSON.\n\n{\n  \"visual_risk_score\": 0,\n  \"visual_match_percentage\": 0,\n  \"counterfeit_confidence\": \"\",\n  \"visual_findings\": [],\n  \"recommended_visual_action\": \"\",\n  \"requires_manual_image_review\": true\n}"
+            },
+            {
+              "content": "=You are comparing an official marketplace catalog image against a seller-uploaded image.\n\n==================================================\nOFFICIAL PRODUCT\n==================================================\n\nBrand:\n{{$node[\"Escalations\"].json[\"Brand\"]}}\n\nProduct:\n{{$node[\"Escalations\"].json[\"Product_Category\"]}}\n\nOfficial Catalog Image:\n{{$node[\"Escalations\"].json[\"Catalog_Image_URL\"]}}\n\n==================================================\nSELLER PRODUCT\n==================================================\n\nSeller Image:\n{{$node[\"Escalations\"].json[\"Seller_Image_URL\"]}}\n\n==================================================\nBRAND CATALOG REFERENCE\n==================================================\n\n{{ JSON.stringify($items(\"Brand Catalog\").map(item => item.json), null, 2) }}\n\n==================================================\nTASK\n==================================================\n\nCompare the seller product against:\n\n\u2022 Official catalog image\n\n\u2022 Brand catalog standards\n\nEvaluate:\n\n\u2022 Logo placement\n\n\u2022 Typography\n\n\u2022 Packaging quality\n\n\u2022 Colour accuracy\n\n\u2022 Accessories\n\n\u2022 Box dimensions\n\n\u2022 Seal / shrink wrap\n\n\u2022 Serial number placement\n\n\u2022 Known counterfeit indicators\n\nReturn ONLY valid JSON.\n\n{\n  \"visual_risk_score\":0,\n  \"visual_match_percentage\":0,\n  \"counterfeit_confidence\":\"\",\n  \"visual_findings\":[],\n  \"recommended_visual_action\":\"\",\n  \"requires_manual_image_review\":true\n}\n==================================================\n\nPOLICY CONTEXT\n\n==================================================\n\n{{ JSON.stringify($node[\"Code in JavaScript2\"].json, null, 2) }}\n\nUse this ONLY as investigation context.\n\nDo NOT perform policy reasoning.\n\nYour task remains visual comparison only."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1248,
+        32
+      ],
+      "id": "3c7992<GOOGLE_SHEET_ID>",
+      "name": "Vision Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "<CONFIGURE_IN_N8N>",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list",
+          "cachedResultName": "TrustOS_Mock_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1004,
+          "mode": "list",
+          "cachedResultName": "Brand_Catalog",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit#gid=1004"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Brand",
+              "lookupValue": "={{$items(\"Escalations\")[0].json[\"Brand\"]}}"
+            }
+          ]
+        },
+        "options": {
+          "returnFirstMatch": false
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1072,
+        32
+      ],
+      "id": "6b384859-<GOOGLE_SHEET_ID>",
+      "name": "Brand Catalog",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "<CONFIGURE_IN_N8N>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the TrustOS Risk Committee.\n\nYou are the final decision-making authority.\n\nYou do NOT perform investigations.\n\nYou do NOT inspect images.\n\nYou do NOT interpret marketplace policy.\n\nThose tasks have already been completed by specialised AI agents.\n\nYour responsibility is to review their findings and produce ONE final marketplace enforcement decision.\n\nYour decision must balance:\n\n\u2022 Customer safety\n\n\u2022 Marketplace integrity\n\n\u2022 Brand protection\n\n\u2022 Seller fairness\n\nYou should only recommend strong enforcement when multiple independent agents agree.\n\nReturn ONLY valid JSON.\n\n{\n  \"case_id\":\"\",\n  \"overall_risk_score\":0,\n  \"overall_risk_level\":\"\",\n  \"final_decision\":\"\",\n  \"confidence\":\"\",\n  \"requires_human_approval\":true,\n  \"business_justification\":\"\",\n  \"supporting_agents\":[],\n  \"recommended_actions\":[],\n  \"executive_summary\":\"\"\n}\nIf multiple specialist agents independently conclude there is sufficient evidence of a severe Trust & Safety violation, you may recommend immediate enforcement.\n\nIf evidence is incomplete or conflicting, require human approval."
+            },
+            {
+              "content": "=Review the outputs from the specialist TrustOS agents.\n\n==================================================\nEvidence Agent\n==================================================\n\n{{ JSON.stringify($node[\"Code in JavaScript1\"].json, null, 2) }}\n\n==================================================\nPolicy Agent\n==================================================\n\n{{ JSON.stringify($node[\"Code in JavaScript2\"].json, null, 2) }}\n\n==================================================\nVision Agent\n==================================================\n\n{{ JSON.stringify($node[\"Parse Vision JSON\"].json, null, 2) }}\n\n==================================================\n\nProduce ONE final decision.\n\nDo not investigate again.\n\nDo not reinterpret policy.\n\nDo not inspect images.\n\nInstead:\n\n1. Calculate the overall risk.\n\n2. Determine the final marketplace decision.\n\n3. Explain why.\n\n4. State whether human approval is required.\n\nReturn ONLY JSON."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1728,
+        32
+      ],
+      "id": "ba50e4<GOOGLE_SHEET_ID>",
+      "name": "Risk Committee",
+      "credentials": {
+        "openAiApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "<CONFIGURE_IN_N8N>",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are the Executive Reporter for TrustOS.\n\nYou are NOT an investigator.\n\nYou are NOT a policy engine.\n\nYou are NOT a vision model.\n\nYou receive the FINAL approved decision from the Risk Committee.\n\nYour job is to transform structured investigation data into an executive business report suitable for senior Trust & Safety leadership.\n\nYour report should be concise, professional and enterprise-grade.\n\nThe report must include:\n\n1. Executive Summary\n\n2. Investigation Overview\n\n3. Evidence Summary\n\n4. Policy Assessment\n\n5. Vision Assessment\n\n6. Final Risk Assessment\n\n7. Final Decision\n\n8. Business Impact\n\n9. Recommended Next Steps\n\nDo not invent new findings.\n\nDo not change the committee decision.\n\nUse only the supplied information.\n\nReturn Markdown."
+            },
+            {
+              "content": "=Generate an Executive Investigation Report.\n\nYou are the final reporting agent.\n\nYour responsibility is ONLY to transform the supplied investigation outputs into a concise executive report.\n\nDO NOT perform any additional investigation.\n\nDO NOT change any recommendation.\n\nDO NOT modify any risk score.\n\nDO NOT invent evidence.\n\nIf information is unavailable, explicitly state \"Not Available\".\n\n==================================================\nFINAL RISK COMMITTEE DECISION\n==================================================\n\n{{ JSON.stringify($node[\"Code in JavaScript3\"].json, null, 2) }}\n\n==================================================\nEVIDENCE AGENT FINDINGS\n==================================================\n\n{{ JSON.stringify($node[\"Code in JavaScript1\"].json, null, 2) }}\n\n==================================================\nPOLICY ASSESSMENT\n==================================================\n\n{{ JSON.stringify($node[\"Code in JavaScript2\"].json, null, 2) }}\n\n==================================================\nVISION ASSESSMENT\n==================================================\n\n{{ JSON.stringify($node[\"Parse Vision JSON\"].json, null, 2) }}\n\n==================================================\n\nProduce a professional Markdown report with the following sections only.\n\n# Executive Investigation Report\n\n## Executive Summary\n\nProvide a 3\u20135 sentence summary of the investigation.\n\n## Investigation Overview\n\nInclude:\n\n- Ticket ID\n- Seller ID\n- Brand\n- Investigation Type\n- Risk Level\n- Overall Risk Score\n\n## Evidence Summary\n\nSummarise:\n\n- Seller history\n- Customer review findings\n- Historical violations\n- Key evidence\n\n## Policy Assessment\n\nSummarise:\n\n- Policies triggered\n- Policy severity\n- Enforcement recommendation\n\n## Vision Assessment\n\nSummarise:\n\n- Visual findings\n- Match percentage\n- Counterfeit confidence\n- Manual review requirement\n\n## Final Risk Assessment\n\nInclude:\n\n- Overall Risk Score\n- Overall Risk Level\n- Confidence\n- Human Approval Required\n\n## Final Decision\n\nClearly state:\n\n- Final Recommendation\n- Enforcement Action\n- Escalations Required\n\n## Business Impact\n\nSummarise:\n\n- Customer Impact\n- Marketplace Impact\n- Brand Impact\n\n## Recommended Next Steps\n\nProvide the actions exactly as recommended by the Risk Committee.\n\nDo not add any recommendations that were not provided.\n\nReturn Markdown only."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        2256,
+        32
+      ],
+      "id": "993f2ee<GOOGLE_SHEET_ID>",
+      "name": "Executive Reporter",
+      "credentials": {
+        "openAiApi": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "<CONFIGURE_IN_N8N>",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3056,
+        32
+      ],
+      "id": "9307a34f-3c7a-4<GOOGLE_SHEET_ID>",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "<GOOGLE_SHEET_ID>",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "53d5<GOOGLE_SHEET_ID>",
+              "name": "executive_report",
+              "value": "={{$node[\"Parse Executive Report\"].json.executive_report}}",
+              "type": "string"
+            },
+            {
+              "id": "f7<GOOGLE_SHEET_ID>",
+              "name": "ticket_id",
+              "value": "={{$items(\"Escalations\")[0].json.Ticket_ID}}",
+              "type": "string"
+            },
+            {
+              "id": "8fab4d8c-35d6-4beb-8f43-c7310cf65f3b",
+              "name": "brand",
+              "value": "={{$items(\"Escalations\")[0].json.Brand}}",
+              "type": "string"
+            },
+            {
+              "id": "eda2c<GOOGLE_SHEET_ID>",
+              "name": "seller",
+              "value": "={{$items(\"Escalations\")[0].json.Seller_ID}}",
+              "type": "string"
+            },
+            {
+              "id": "c6364839-d994-4e2a-8fe2-cd1d689e10a2",
+              "name": "product",
+              "value": "={{$items(\"Escalations\")[0].json.Product_Category}}",
+              "type": "string"
+            },
+            {
+              "id": "3de780ad-b<GOOGLE_SHEET_ID>",
+              "name": "issue",
+              "value": "={{$items(\"Escalations\")[0].json.Issue}}",
+              "type": "string"
+            },
+            {
+              "id": "4794ab8d-aaaa-4b36-82fc-9e5c8b5b58d9",
+              "name": "priority",
+              "value": "={{$items(\"Escalations\")[0].json.Priority}}",
+              "type": "string"
+            },
+            {
+              "id": "6ce50c33-<GOOGLE_SHEET_ID>",
+              "name": "status",
+              "value": "={{$items(\"Escalations\")[0].json.Status}}",
+              "type": "string"
+            },
+            {
+              "id": "568<GOOGLE_SHEET_ID>",
+              "name": "investigation_date",
+              "value": "={{$items(\"Escalations\")[0].json.Investigation_Date}}",
+              "type": "string"
+            },
+            {
+              "id": "eb2cec04-937c-4a26-a427-35e23db1e610",
+              "name": "risk_score",
+              "value": "={{$node[\"Code in JavaScript3\"].json.overall_risk_score}}",
+              "type": "string"
+            },
+            {
+              "id": "5307c008-e66<GOOGLE_SHEET_ID>",
+              "name": "risk_level",
+              "value": "={{$node[\"Code in JavaScript3\"].json.overall_risk_level}}",
+              "type": "string"
+            },
+            {
+              "id": "d72f3<GOOGLE_SHEET_ID>",
+              "name": "decision",
+              "value": "={{$node[\"Code in JavaScript3\"].json.final_decision}}",
+              "type": "string"
+            },
+            {
+              "id": "99b30fd2-7fbc-4ca6-ad97-5e627de680d4",
+              "name": "confidence",
+              "value": "={{$node[\"Code in JavaScript3\"].json.confidence}}",
+              "type": "string"
+            },
+            {
+              "id": "b262489<GOOGLE_SHEET_ID>",
+              "name": "executive_summary",
+              "value": "={{$node[\"Code in JavaScript3\"].json.executive_summary}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2800,
+        32
+      ],
+      "id": "a6<GOOGLE_SHEET_ID>",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Incoming items from Seller_History (30 rows)\nconst sellers = $input.all();\n\n// Seller_ID from the Reviews node\nconst targetSellerId = $('Reviews').first().json.Seller_ID;\n\n// Find the matching seller\nconst match = sellers.find(\n  item => item.json.Seller_ID === targetSellerId\n);\n\nif (!match) {\n  throw new Error(`Seller not found: ${targetSellerId}`);\n}\n\nreturn [match];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -128,
+        32
+      ],
+      "id": "d62ce239-2272-465a-83e9-718021da04a4",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "<GOOGLE_SHEET_ID>",
+          "mode": "list",
+          "cachedResultName": "TrustOS_Mock_Database",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1002,
+          "mode": "list",
+          "cachedResultName": "Seller_History",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<GOOGLE_SHEET_ID>/edit#gid=1002"
+        },
+        "options": {
+          "returnFirstMatch": false
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -336,
+        32
+      ],
+      "id": "cfd2930<GOOGLE_SHEET_ID>",
+      "name": "Seller History",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "<CREDENTIAL_ID>",
+          "name": "<CONFIGURE_IN_N8N>"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $json.output[0].content[0].text;\n\n// If text is already an object\nif (typeof response === \"object\") {\n  return [{ json: response }];\n}\n\n// Otherwise parse the JSON string\nreturn [{\n  json: JSON.parse(response)\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        32
+      ],
+      "id": "96<GOOGLE_SHEET_ID>",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the OpenAI response\nconst response = $input.first().json;\n\n// Extract the text returned by the Policy Agent\nconst text = response.output[0].content[0].text;\n\n// Parse if it's a JSON string, otherwise return as-is\nconst parsed = typeof text === \"string\" ? JSON.parse(text) : text;\n\nreturn [\n  {\n    json: parsed,\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        864,
+        32
+      ],
+      "id": "be2b2c34-cbe7-447c-a758-0792b627b8d6",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst text = response.output[0].content[0].text;\nconst parsed = typeof text === \"string\" ? JSON.parse(text) : text;\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        32
+      ],
+      "id": "<GOOGLE_SHEET_ID>",
+      "name": "Parse Vision JSON"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst text = response.output[0].content[0].text;\nconst parsed = typeof text === \"string\" ? JSON.parse(text) : text;\n\nreturn [{\n  json: parsed\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        32
+      ],
+      "id": "2f0e5078-2857-4<GOOGLE_SHEET_ID>",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst text = response.output[0].content[0].text;\n\nreturn [{\n  json: {\n    executive_report: text\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2576,
+        32
+      ],
+      "id": "c402279<GOOGLE_SHEET_ID>",
+      "name": "Parse Executive Report"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "your-n8n-instance",
+            "user-agent": "node",
+            "content-length": "24",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "accept-language": "*",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "34.147.10.222",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "NL",
+            "cf-ray": "a21903d27ef83379-AMS",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "sec-fetch-mode": "cors",
+            "x-forwarded-for": "34.147.10.222, 104.23.170.115",
+            "x-forwarded-host": "your-n8n-instance",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-swc-38-854dd9f849-v8hjn",
+            "x-is-trusted": "yes",
+            "x-real-ip": "34.147.10.222"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "ticket_id": "TKT-1029"
+          },
+          "webhookUrl": "https://your-n8n-instance/webhook/<WEBHOOK_ID><GOOGLE_SHEET_ID>",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Escalations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalations": {
+      "main": [
+        [
+          {
+            "node": "Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reviews": {
+      "main": [
+        [
+          {
+            "node": "Seller History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evidence Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Policy Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brand Catalog": {
+      "main": [
+        [
+          {
+            "node": "Vision Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vision Agent": {
+      "main": [
+        [
+          {
+            "node": "Parse Vision JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Committee": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executive Reporter": {
+      "main": [
+        [
+          {
+            "node": "Parse Executive Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Evidence Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seller History": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Policy Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Brand Catalog",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Vision JSON": {
+      "main": [
+        [
+          {
+            "node": "Risk Committee",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Executive Reporter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Executive Report": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "7e93e66f-38da-49ef-8c4c-a55b8dd35775",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5c0b0ebb784<GOOGLE_SHEET_ID>"
+  },
+  "nodeGroups": [],
+  "id": "9iZhIJtQzp4n3lAq",
+  "tags": []
+}
